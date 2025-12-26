@@ -2,7 +2,6 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from scipy.stats import entropy
-import os
 
 def load_data_from_tsv(file_path):
     """
@@ -25,57 +24,41 @@ def load_data_from_tsv(file_path):
 
 def build_transition_digraph(word_sequence):
     """
-    Build a directed graph where edges represent transitions between words.
-    Edges store the count of transitions.
+    Build a directed graph where edges store:
+    - 'weight': Total count of A->B transitions.
+    - 'next_counts': {C: count} tracking A->B->C occurrences.
     """
     G = nx.DiGraph()
-    
+    if len(word_sequence) < 2:
+        return G
+
+    # Build edges and weights
     for i in range(len(word_sequence) - 1):
-        u = word_sequence[i]
-        v = word_sequence[i+1]
-        
+        u, v = word_sequence[i], word_sequence[i+1]
         if G.has_edge(u, v):
             G[u][v]['weight'] += 1
         else:
-            G.add_edge(u, v, weight=1)
+            G.add_edge(u, v, weight=1, next_counts={})
+
+    # Track transitions to the next state
+    for i in range(len(word_sequence) - 2):
+        u, v, w = word_sequence[i], word_sequence[i+1], word_sequence[i+2]
+        G[u][v]['next_counts'][w] = G[u][v]['next_counts'].get(w, 0) + 1
             
     return G
 
 def calculate_io_entropy(G):
     """
-    Calculate Shannon entropy for each edge (A->B).
-    
-    The entropy for edge A->B is calculated based on the transition probabilities
-    from B, but using the weight of A->B as the denominator.
-    
-    P(C|B, A) = weight(B,C) / weight(A,B)
-    Entropy(A->B) = Entropy({P(C|B, A)})
+    Calculate conditional Shannon entropy H(Next | Current, Previous) for each edge.
     """
-    # Pre-calculate out-edges for all nodes to avoid repeated queries
-    # structure: {node: [weights]}
-    node_out_weights = {}
-    for node in G.nodes():
-        node_out_weights[node] = [data['weight'] for u, v, data in G.out_edges(node, data=True)]
-
     for u, v, data in G.edges(data=True):
-        # Denominator is the weight of the incoming edge (u->v)
-        in_weight = data['weight']
-        
-        if in_weight == 0:
+        next_counts = data.get('next_counts', {})
+        if not next_counts:
             data['entropy'] = 0.0
             continue
             
-        out_weights = node_out_weights[v]
-        
-        if not out_weights:
-            data['entropy'] = 0.0
-            continue
-            
-        # P(C|B) using edge weight as denominator
-        probs = [w / in_weight for w in out_weights]
-        
-        # scipy.stats.entropy normalizes the input automatically
-        data['entropy'] = entropy(probs, base=2)
+        counts = list(next_counts.values())
+        data['entropy'] = entropy(counts, base=2)
         
     return G
 

@@ -2,64 +2,58 @@
 
 ## 概要
 本レポートは，`digraph-inout-analysis` リポジトリにおける有向グラフのエントロピー計算の仕様（`AGENTS.md`）と，その実装（`src/digraph_inout_analysis/core.py`）の対応関係を数理的観点から整理したものです．
-（※ユーザーの指摘に基づき，実装ロジックを修正・再確認した最新版です）
+（※ユーザーの指摘に基づき，2階マルコフ過程（条件付き確率）に基づく実装へ修正した最終版です）
 
 ## 1. エントロピー計算の数理的仕様
 
-有向グラフ上の**各エッジ**に対して，以下の手順でエントロピーを定義・計算します．
+単純なノード間の遷移確率（1階マルコフ過程）ではなく，**「どこから来たか」の履歴を考慮した条件付き確率**（2階マルコフ過程）に基づいてエントロピーを計算します．
 
 ### 記号の定義
-- $G = (V, E)$: 有向グラフ
-- $A \to B$: 着目している有向辺
-- $w_{AB}$: 辺 $A \to B$ の重み（入力の強さ）
-- $\{C_i\}$: ノード $B$ から遷移する先のノード群
-- $w_{BC_i}$: 辺 $B \to C_i$ の重み（出力の強さ）
+- $X_t$: 時刻 $t$ における状態（ノード）
+- $A \to B \to C$: 連続する3つの状態遷移（$X_{t-1}=A, X_t=B, X_{t+1}=C$）
+- $Count(A \to B)$: 遷移 $A \to B$ の観測回数
+- $Count(A \to B \to C)$: 軌道 $A \to B \to C$ の観測回数
 
-### Step 1: 遷移確率的指標の計算
-有向辺 $A \to B$ の重み $w_{AB}$ を基準（分母）として，ノード $B$ からの各出力方向への強さの比率を計算します．
+### Step 1: 条件付き確率分布の計算
+「現在 $B$ にいて，かつ直前に $A$ から遷移してきた」という条件の下で，次に $C_i$ へ遷移する確率 $P(C_i | B, A)$ を推定します．
 
-$$ r_i(A \to B) = \frac{w_{BC_i}}{w_{AB}} $$
-
-この $r_i$ は確率（総和が1）になるとは限りませんが，次のステップで分布の形状として評価されます．
+$$ P(C_i | B, A) = P(X_{t+1}=C_i \mid X_t=B, X_{t-1}=A) \approx \frac{Count(A \to B \to C_i)}{\sum_{k} Count(A \to B \to C_k)} $$
 
 ### Step 2: Shannon Entropy の計算
-各辺 $A \to B$ に割り当てるエントロピー $H(A \to B)$ は，上記の比率の分布 $\{r_i\}_i$ の Shannon entropy として定義されます．計算時には正規化が行われます．
+各有向辺 $A \to B$ に対して，この条件付き確率分布のエントロピーを計算し，割り当てます．
 
-$$ p_i = \frac{r_i}{\sum_k r_k} = \frac{w_{BC_i}}{\sum_k w_{BC_k}} $$
-$$ H(A \to B) = - \sum_{i} p_i \log_2 p_i $$
+$$ H(A \to B) = - \sum_{i} P(C_i | B, A) \log_2 P(C_i | B, A) $$
 
-> **Note**: 数学的には，Shannon entropy の計算過程で正規化（$\sum p=1$）を行う場合，分母の $w_{AB}$ はキャンセルされ，結果的に「$B$ からの出力重みの分布」のエントロピーと一致します．しかし，意味論として「$A$ からの入力 $w_{AB}$ が $B$ でどのように分散するか」を評価している構造になっています．
+これにより，同じノード $B$ に到達する辺であっても，前状態（$A$ vs $X$）によって次の挙動予測の不確実性が異なる場合，それぞれ異なるエントロピー値が付与されます．
 
-## 2. 実装との対応
+## 2. 実装詳細
 
-Python モジュール `src/digraph_inout_analysis/core.py` 内の `calculate_io_entropy` 関数は，以下の通り実装されています．
+### データ構造の拡張
+`networkx.DiGraph` のエッジ属性として，単純な重みだけでなく，次のステップへのカウント情報を保持します．
 
-### コード詳細
+- Edge $(u, v)$ attributes:
+    - `'weight'`: $Count(u \to v)$
+    - `'next_counts'`: 辞書 `{w: count}`．$Count(u \to v \to w)$ を保持．
 
-```python
-def calculate_io_entropy(G):
-    # 事前に全ノードの出力重みを取得
-    node_out_weights = {}
-    for node in G.nodes():
-        node_out_weights[node] = [weight for ... in out_edges(node)]
+### アルゴリズム (`src/digraph_inout_analysis/core.py`)
 
-    # 全エッジ(u->v)について個別に計算
-    for u, v, data in G.edges(data=True):
-        # [分母] 着目しているエッジの重み in_weight = w_uv
-        in_weight = data['weight']
-        
-        # [分子] 遷移先の重みリスト out_weights = {w_vCi}
-        out_weights = node_out_weights[v]
-            
-        # [比率計算]
-        probs = [w / in_weight for w in out_weights]
-        
-        # [エントロピー計算]
-        # scipy.stats.entropy により自動正規化され計算される
-        data['entropy'] = entropy(probs, base=2)
-        
-    return G
-```
+1.  **グラフ構築 (`build_transition_digraph`)**:
+    与えられた単語列から3連続の並び（トリプレット）$(u, v, w)$ を走査し，エッジ $u \to v$ の `next_counts` 属性に $w$ の出現回数を加算記録します．
 
-### 修正のポイント
-以前の実装では「ノード $B$ ごとに In-Degree 総和を分母として計算し，それを全ての入ってくる辺にコピーする」というアプローチでしたが，現在の実装では**「各エッジ $A \to B$ ごとに，そのエッジの重みを分母として計算する」**形に厳密に修正されました．これにより，$A$ からの入力に対する依存関係がコード上で明確になっています．
+2.  **エントロピー計算 (`calculate_io_entropy`)**:
+    各有向辺 $u \to v$ について：
+    -   `next_counts` を取得（分布 $\{Count(u \to v \to w)\}_w$）．
+    -   `scipy.stats.entropy` を用いてエントロピーを計算．
+    -   結果を属性 `entropy` として保存．
+
+### 検証結果
+検証スクリプト (`examples/simple_entropy_check.py`) により，以下の挙動を確認済みです．
+- パターン1: $A \to B \to C$
+- パターン2: $X \to B \to D$
+この2つのフローが混在する場合：
+- 従来手法（1階）：$B$ からの分岐は $C, D$ のランダム遷移とみなされ，エントロピーは 1.0 bit．
+- **現在手法（2階）**:
+    - $A \to B$ の次は必ず $C$ であるため，エントロピーは **0.0 bit**．
+    - $X \to B$ の次は必ず $D$ であるため，エントロピーは **0.0 bit**．
+
+文脈依存の決定論的な遷移を正しく「不確実性ゼロ」として評価できています．

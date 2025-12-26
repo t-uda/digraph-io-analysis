@@ -1,6 +1,5 @@
 
-import networkx as nx
-from digraph_inout_analysis.core import calculate_io_entropy
+from digraph_inout_analysis.core import build_transition_digraph, calculate_io_entropy
 
 def print_graph_entropy(G, name):
     print(f"\n--- {name} ---")
@@ -10,24 +9,32 @@ def print_graph_entropy(G, name):
 
 def main():
     # Case 1: Simple chain
-    # A -> B (10) -> C (5)
-    #             -> D (5)
-    G1 = nx.DiGraph()
-    G1.add_edge('A', 'B', weight=10)
-    G1.add_edge('B', 'C', weight=5)
-    G1.add_edge('B', 'D', weight=5)
-    print_graph_entropy(G1, "Case 1: Simple Chain")
-
-    # Case 2: Multiple Inputs with Different Weights
-    # X -> B (2) -> C (5)
-    #            -> D (5)
-    # Y -> B (8) -> ...
-    G2 = nx.DiGraph()
-    G2.add_edge('X', 'B', weight=2)
-    G2.add_edge('Y', 'B', weight=8)
-    G2.add_edge('B', 'C', weight=5)
-    G2.add_edge('B', 'D', weight=5) 
-    print_graph_entropy(G2, "Case 2: Multiple Inputs")
+    # Sequence: A -> B -> C -> A ... (loop)
+    # A -> B -> C
+    # But to test entropy, we need B to branch.
+    # Let's say B branches to C and D.
+    
+    # 1st Order would see B->C and B->D mixed.
+    # 2nd Order checks history.
+    
+    # Scenario:
+    # Pattern 1: A -> B -> C
+    # Pattern 2: X -> B -> D
+    # If we feed a sequence mixing these, the graph (1st order) sees B->C and B->D.
+    # But 2nd order (A->B) should only see C. (X->B) should only see D.
+    
+    # Sequence: A, B, C, X, B, D, A, B, C, X, B, D ...
+    seq = ['A', 'B', 'C', 'X', 'B', 'D'] * 10
+    
+    print("\n[Input Sequence]")
+    print(f"Repeating: A -> B -> C, X -> B -> D")
+    
+    G = build_transition_digraph(seq)
+    print_graph_entropy(G, "Conditional Entropy Verification")
+    
+    # Expectation:
+    # A->B and X->B should have entropy 0.0 because history uniquely determines the next step.
+    # (Old logic would give 1.0 bit due to mixed out-edges from B).
 
 if __name__ == "__main__":
     main()
