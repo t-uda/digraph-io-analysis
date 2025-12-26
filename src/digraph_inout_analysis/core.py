@@ -43,31 +43,39 @@ def build_transition_digraph(word_sequence):
 
 def calculate_io_entropy(G):
     """
-    Calculate Shannon entropy for each edge based on transition probabilities.
+    Calculate Shannon entropy for each edge (A->B).
     
-    For each node B, compute P(C|B) = weight(B,C) / total_in_weight(B),
-    then calculate Shannon entropy H(B) = -Σ P(C|B) log₂ P(C|B).
-    The entropy value is assigned to all incoming edges (A->B).
+    The entropy for edge A->B is calculated based on the transition probabilities
+    from B, but using the weight of A->B as the denominator.
+    
+    P(C|B, A) = weight(B,C) / weight(A,B)
+    Entropy(A->B) = Entropy({P(C|B, A)})
     """
-    node_entropies = {}
+    # Pre-calculate out-edges for all nodes to avoid repeated queries
+    # structure: {node: [weights]}
+    node_out_weights = {}
     for node in G.nodes():
-        total_in_weight = sum(data['weight'] for u, v, data in G.in_edges(node, data=True))
+        node_out_weights[node] = [data['weight'] for u, v, data in G.out_edges(node, data=True)]
+
+    for u, v, data in G.edges(data=True):
+        # Denominator is the weight of the incoming edge (u->v)
+        in_weight = data['weight']
         
-        if total_in_weight == 0:
-            node_entropies[node] = 0.0
+        if in_weight == 0:
+            data['entropy'] = 0.0
             continue
             
-        out_weights = [data['weight'] for u, v, data in G.out_edges(node, data=True)]
+        out_weights = node_out_weights[v]
         
         if not out_weights:
-            node_entropies[node] = 0.0
+            data['entropy'] = 0.0
             continue
             
-        probs = [w / total_in_weight for w in out_weights]
-        node_entropies[node] = entropy(probs, base=2)
+        # P(C|B) using edge weight as denominator
+        probs = [w / in_weight for w in out_weights]
         
-    for u, v, data in G.edges(data=True):
-        data['entropy'] = node_entropies[v]
+        # scipy.stats.entropy normalizes the input automatically
+        data['entropy'] = entropy(probs, base=2)
         
     return G
 
