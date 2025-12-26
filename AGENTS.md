@@ -20,6 +20,20 @@
 
 Google Drive へのマウントからデータの読み込みを行うノートブックはこちらで準備します．このプロジェクトでは，Colab ノートブックから使われる前提で，特定のデータファイルに依存しないよう抽象化したグラフ解析のための Python モジュール部分と，テストデータを用いたテスト解析プログラムを提供してください．
 
+### Colab からのインストール方法
+
+このリポジトリは GitHub 経由で直接 pip install できます．Colab ノートブックでは以下のコマンドを実行してください：
+
+```python
+!pip install git+https://github.com/t-uda/digraph-io-analysis.git
+```
+
+インストール後は以下のようにモジュールをインポートできます：
+
+```python
+from digraph_inout_analysis.core import build_transition_graph, calculate_entropy, export_to_gephi
+```
+
 ## tsv ファイルの中身と有向グラフ作成
 
 各時刻 `time` の `sub_cot` 列を離散力学系とみなしてください．`error` エントリは多くの場合短いタイムスケールであるため，スキップしてください．つまり，時刻 `t` からしばらくあとの時刻 `t+n` まで `error` があった場合，その行の `sub_cot` データはないものとみなして，`t-1` から `t+n+1` への有向辺を作成します．
