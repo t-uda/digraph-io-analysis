@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2025-12-26">
+    <creator>NetworkX 3.6.1</creator>
+  </meta>
+  <graph defaultedgetype="directed" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="2" title="entropy" type="float" />
+    </attributes>
+    <attributes mode="static" class="node">
+      <attribute id="0" title="in_degree" type="long" />
+      <attribute id="1" title="out_degree" type="long" />
+    </attributes>
+    <nodes>
+      <node id="B+{c+.c+.c+}" label="B+{c+.c+.c+}">
+        <attvalues>
+          <attvalue for="0" value="5706" />
+          <attvalue for="1" value="5706" />
+        </attvalues>
+      </node>
+      <node id="B+{c+.c+.c+.c+}" label="B+{c+.c+.c+.c+}">
+        <attvalues>
+          <attvalue for="0" value="1253" />
+          <attvalue for="1" value="1253" />
+        </attvalues>
+      </node>
+      <node id="B+{c+.c+.c+.c+.c+}" label="B+{c+.c+.c+.c+.c+}">
+        <attvalues>
+          <attvalue for="0" value="17" />
+          <attvalue for="1" value="17" />
+        </attvalues>
+      </node>
+      <node id="B+{c+(b++,L-).c+.c+.c+}" label="B+{c+(b++,L-).c+.c+.c+}">
+        <attvalues>
+          <attvalue for="0" value="1478" />
+          <attvalue for="1" value="1478" />
+        </attvalues>
+      </node>
+      <node id="B+{c+.c+(b++,L-).c+}" label="B+{c+.c+(b++,L-).c+}">
+        <attvalues>
+          <attvalue for="0" value="1389" />
+          <attvalue for="1" value="1389" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="B+{c+.c+.c+}" target="B+{c+.c+.c+}" id="0" weight="5687">
+        <attvalues>
+          <attvalue for="2" value="0.03220152674001432" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+}" target="B+{c+.c+.c+.c+}" id="1" weight="19">
+        <attvalues>
+          <attvalue for="2" value="0.23371872946882555" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+.c+}" target="B+{c+.c+.c+.c+}" id="2" weight="1215">
+        <attvalues>
+          <attvalue for="2" value="0.23371872946882555" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+.c+}" target="B+{c+.c+.c+.c+.c+}" id="3" weight="17">
+        <attvalues>
+          <attvalue for="2" value="0.0" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+.c+}" target="B+{c+.c+(b++,L-).c+}" id="4" weight="19">
+        <attvalues>
+          <attvalue for="2" value="0.10429735885033709" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+.c+}" target="B+{c+(b++,L-).c+.c+.c+}" id="5" weight="2">
+        <attvalues>
+          <attvalue for="2" value="0.09917646500702305" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+.c+.c+.c+}" target="B+{c+(b++,L-).c+.c+.c+}" id="6" weight="17">
+        <attvalues>
+          <attvalue for="2" value="0.09917646500702305" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+(b++,L-).c+.c+.c+}" target="B+{c+(b++,L-).c+.c+.c+}" id="7" weight="1459">
+        <attvalues>
+          <attvalue for="2" value="0.09917646500702305" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+(b++,L-).c+.c+.c+}" target="B+{c+.c+.c+.c+}" id="8" weight="19">
+        <attvalues>
+          <attvalue for="2" value="0.23371872946882555" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+(b++,L-).c+}" target="B+{c+.c+(b++,L-).c+}" id="9" weight="1370">
+        <attvalues>
+          <attvalue for="2" value="0.10429735885033709" />
+        </attvalues>
+      </edge>
+      <edge source="B+{c+.c+(b++,L-).c+}" target="B+{c+.c+.c+}" id="10" weight="19">
+        <attvalues>
+          <attvalue for="2" value="0.03220152674001432" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>
