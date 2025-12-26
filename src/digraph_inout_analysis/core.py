@@ -65,8 +65,14 @@ def calculate_io_entropy(G):
 def export_to_gephi(G, output_path):
     """
     Export the graph to GEXF format which is compatible with Gephi.
+    Note: next_counts is excluded as GEXF doesn't support nested dict attributes.
     """
-    nx.write_gexf(G, output_path)
+    G_export = G.copy()
+    for u, v in G_export.edges():
+        if 'next_counts' in G_export[u][v]:
+            del G_export[u][v]['next_counts']
+    
+    nx.write_gexf(G_export, output_path)
     print(f"Graph exported to {output_path}")
 
 def run_analysis_pipeline(tsv_path, output_gexf_path):

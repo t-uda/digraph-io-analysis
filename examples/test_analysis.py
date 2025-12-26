@@ -25,11 +25,11 @@ def main():
     print(f"Nodes: {G.number_of_nodes()}")
     print(f"Edges: {G.number_of_edges()}")
     
-    # Show some edges with high entropy
     print("\nSample edges with entropy values:")
     sorted_edges = sorted(G.edges(data=True), key=lambda x: x[2].get('entropy', 0), reverse=True)
     for u, v, data in sorted_edges[:10]:
-        print(f"  {u} -> {v}: weight={data['weight']}, entropy={data['entropy']:.4f}")
+        next_counts = data.get('next_counts', {})
+        print(f"  {u} -> {v}: weight={data['weight']}, entropy={data['entropy']:.4f}, next_counts={next_counts}")
 
 if __name__ == "__main__":
     main()
