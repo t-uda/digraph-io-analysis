@@ -4,24 +4,31 @@ import numpy as np
 from scipy.stats import entropy
 from typing import Union, List, Tuple
 
-def load_data_from_tsv(file_path):
+def load_data_from_tsv(file_path: str, column_name: str = 'sub_cot') -> List[str]:
     """
-    Load data from TSV and handle error skipping logic.
-    If sub_cot is "error" or NaN, skip it and connect the previous valid state to the next valid state.
+    Load data from TSV/CSV and handle error skipping logic.
+    If column_name is "error" or NaN, skip it and connect the previous valid state to the next valid state.
+    
+    Args:
+        file_path: Path to the data file.
+        column_name: Name of the column representing the dynamics (default: 'sub_cot').
     """
-    df = pd.read_csv(file_path, sep='\t')
+    # Use sep=None with engine='python' for automatic delimiter detection
+    df = pd.read_csv(file_path, sep=None, engine='python')
     
     # Check for required columns
-    required_columns = ['time', 'sub_cot']
+    required_columns = ['time', column_name]
     for col in required_columns:
         if col not in df.columns:
-            raise ValueError(f"Required column '{col}' missing from TSV.")
+            raise ValueError(f"Required column '{col}' missing from data file.")
 
-    # Drop rows where sub_cot is "error" or NaN
-    valid_data = df[df['sub_cot'] != 'error'].copy()
-    valid_data = valid_data.dropna(subset=['sub_cot'])
+    # Convert to string and drop rows where it is "error" or NaN
+    # We use copy() to avoid SettingWithCopyWarning
+    df[column_name] = df[column_name].astype(str)
+    valid_data = df[df[column_name] != 'error'].copy()
+    valid_data = valid_data[valid_data[column_name] != 'nan']
     
-    return valid_data['sub_cot'].tolist()
+    return valid_data[column_name].tolist()
 
 def build_transition_digraph(word_sequence: List[str], ignore_self_loops: bool = False) -> nx.DiGraph:
     """
@@ -98,17 +105,19 @@ def export_to_gephi(G, output_path):
 def run_analysis_pipeline(
     tsv_path: str,
     output_gexf_path: str,
+    column_name: str = 'sub_cot',
     ignore_self_loops: bool = False,
     verbose: bool = True,
     debug: bool = False,
     include_raw_entropy_values: bool = False
 ) -> Union[Tuple[nx.DiGraph, float, float, float], Tuple[nx.DiGraph, float, float, float, List[float]]]:
     """
-    Complete pipeline from TSV to GEXF with entropy analysis.
+    Complete pipeline from TSV/CSV to GEXF with entropy analysis.
     
     Args:
-        tsv_path: Path to the input TSV file.
+        tsv_path: Path to the input data file.
         output_gexf_path: Path for the output GEXF file.
+        column_name: Name of the column to analyze (default: 'sub_cot').
         ignore_self_loops: If True, exclude self-loop transitions from analysis.
         verbose: If True, print progress messages.
         debug: If True, print debug information.
@@ -119,17 +128,10 @@ def run_analysis_pipeline(
             (G, min_entropy, max_entropy, mean_entropy)
         If include_raw_entropy_values is True:
             (G, min_entropy, max_entropy, mean_entropy, entropy_values)
-        
-        Where:
-            G: NetworkX DiGraph with calculated entropy values
-            min_entropy: Minimum edge entropy value
-            max_entropy: Maximum edge entropy value
-            mean_entropy: Mean edge entropy value
-            entropy_values: List of all edge entropy values (if requested)
     """
     if verbose:
-        print(f"Loading data from {tsv_path}...")
-    word_sequence = load_data_from_tsv(tsv_path)
+        print(f"Loading data from {tsv_path} (column='{column_name}')...")
+    word_sequence = load_data_from_tsv(tsv_path, column_name=column_name)
     
     if verbose:
         print(f"Building digraph with {len(word_sequence)} states...")
