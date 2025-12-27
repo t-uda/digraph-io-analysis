@@ -2,6 +2,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from scipy.stats import entropy
+from typing import Union, List, Tuple
 
 def load_data_from_tsv(file_path):
     """
@@ -22,11 +23,18 @@ def load_data_from_tsv(file_path):
     
     return valid_data['sub_cot'].tolist()
 
-def build_transition_digraph(word_sequence):
+def build_transition_digraph(word_sequence: List[str], ignore_self_loops: bool = False) -> nx.DiGraph:
     """
     Build a directed graph where edges store:
     - 'weight': Total count of A->B transitions.
     - 'next_counts': {C: count} tracking A->B->C occurrences.
+    
+    Args:
+        word_sequence: List of state words representing the trajectory.
+        ignore_self_loops: If True, exclude self-loop transitions (A->A) from the graph.
+    
+    Returns:
+        NetworkX DiGraph with transition counts and next-state distributions.
     """
     G = nx.DiGraph()
     if len(word_sequence) < 2:
@@ -35,6 +43,11 @@ def build_transition_digraph(word_sequence):
     # Build edges and weights
     for i in range(len(word_sequence) - 1):
         u, v = word_sequence[i], word_sequence[i+1]
+        
+        # Skip self-loops if requested
+        if ignore_self_loops and u == v:
+            continue
+            
         if G.has_edge(u, v):
             G[u][v]['weight'] += 1
         else:
@@ -43,7 +56,14 @@ def build_transition_digraph(word_sequence):
     # Track transitions to the next state
     for i in range(len(word_sequence) - 2):
         u, v, w = word_sequence[i], word_sequence[i+1], word_sequence[i+2]
-        G[u][v]['next_counts'][w] = G[u][v]['next_counts'].get(w, 0) + 1
+        
+        # Skip if the current transition is a self-loop (when ignore_self_loops is True)
+        if ignore_self_loops and u == v:
+            continue
+            
+        # Only track next state if the edge exists (it might have been skipped)
+        if G.has_edge(u, v):
+            G[u][v]['next_counts'][w] = G[u][v]['next_counts'].get(w, 0) + 1
             
     return G
 
@@ -75,24 +95,90 @@ def export_to_gephi(G, output_path):
     nx.write_gexf(G_export, output_path)
     print(f"Graph exported to {output_path}")
 
-def run_analysis_pipeline(tsv_path, output_gexf_path):
+def run_analysis_pipeline(
+    tsv_path: str,
+    output_gexf_path: str,
+    ignore_self_loops: bool = False,
+    verbose: bool = True,
+    debug: bool = False,
+    include_raw_entropy_values: bool = False
+) -> Union[Tuple[nx.DiGraph, float, float, float], Tuple[nx.DiGraph, float, float, float, List[float]]]:
     """
-    Complete pipeline from TSV to GEXF.
+    Complete pipeline from TSV to GEXF with entropy analysis.
+    
+    Args:
+        tsv_path: Path to the input TSV file.
+        output_gexf_path: Path for the output GEXF file.
+        ignore_self_loops: If True, exclude self-loop transitions from analysis.
+        verbose: If True, print progress messages.
+        debug: If True, print debug information.
+        include_raw_entropy_values: If True, include list of all edge entropy values in return.
+    
+    Returns:
+        If include_raw_entropy_values is False:
+            (G, min_entropy, max_entropy, mean_entropy)
+        If include_raw_entropy_values is True:
+            (G, min_entropy, max_entropy, mean_entropy, entropy_values)
+        
+        Where:
+            G: NetworkX DiGraph with calculated entropy values
+            min_entropy: Minimum edge entropy value
+            max_entropy: Maximum edge entropy value
+            mean_entropy: Mean edge entropy value
+            entropy_values: List of all edge entropy values (if requested)
     """
-    print(f"Loading data from {tsv_path}...")
+    if verbose:
+        print(f"Loading data from {tsv_path}...")
     word_sequence = load_data_from_tsv(tsv_path)
     
-    print(f"Building digraph with {len(word_sequence)} transitions...")
-    G = build_transition_digraph(word_sequence)
+    if verbose:
+        print(f"Building digraph with {len(word_sequence)} states...")
     
-    print("Calculating I/O entropy...")
+    # Count self-loops for debug output
+    if debug:
+        self_loop_count = sum(1 for i in range(len(word_sequence) - 1) 
+                             if word_sequence[i] == word_sequence[i+1])
+        print(f"[DEBUG] Self-loops detected: {self_loop_count}")
+        if ignore_self_loops:
+            print(f"[DEBUG] Self-loops will be excluded from graph construction")
+    
+    G = build_transition_digraph(word_sequence, ignore_self_loops=ignore_self_loops)
+    
+    if verbose:
+        print(f"Graph built: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+    
+    if verbose:
+        print("Calculating I/O entropy...")
     G = calculate_io_entropy(G)
+    
+    # Extract entropy values and calculate statistics
+    entropy_values = [data['entropy'] for u, v, data in G.edges(data=True)]
+    
+    if len(entropy_values) > 0:
+        min_entropy = float(np.min(entropy_values))
+        max_entropy = float(np.max(entropy_values))
+        mean_entropy = float(np.mean(entropy_values))
+    else:
+        min_entropy = max_entropy = mean_entropy = 0.0
+    
+    if debug:
+        print(f"[DEBUG] Entropy statistics:")
+        print(f"[DEBUG]   Min:  {min_entropy:.4f}")
+        print(f"[DEBUG]   Max:  {max_entropy:.4f}")
+        print(f"[DEBUG]   Mean: {mean_entropy:.4f}")
+        print(f"[DEBUG]   Total edges with entropy: {len(entropy_values)}")
     
     # Add labels and degrees as attributes for Gephi
     for node in G.nodes():
         G.nodes[node]['label'] = str(node)
         G.nodes[node]['in_degree'] = G.in_degree(node, weight='weight')
         G.nodes[node]['out_degree'] = G.out_degree(node, weight='weight')
-        
+    
+    if verbose:
+        print(f"Exporting to {output_gexf_path}...")
     export_to_gephi(G, output_gexf_path)
-    return G
+    
+    if include_raw_entropy_values:
+        return G, min_entropy, max_entropy, mean_entropy, entropy_values
+    else:
+        return G, min_entropy, max_entropy, mean_entropy
