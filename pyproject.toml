@@ -1,6 +1,6 @@
 [project]
 name = "digraph-inout-analysis"
-version = "0.1.0"
+version = "0.1.1"
 description = "Directed graph analysis for discrete dynamical systems using in-degree/out-degree entropy"
 readme = "README.md"
 authors = [
