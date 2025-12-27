@@ -106,6 +106,7 @@ def run_analysis_pipeline(
     tsv_path: str,
     output_gexf_path: str,
     column_name: str = 'sub_cot',
+    step_size: int = 1,
     ignore_self_loops: bool = False,
     verbose: bool = True,
     debug: bool = False,
@@ -118,6 +119,7 @@ def run_analysis_pipeline(
         tsv_path: Path to the input data file.
         output_gexf_path: Path for the output GEXF file.
         column_name: Name of the column to analyze (default: 'sub_cot').
+        step_size: Sub-sample the sequence by taking every N-th step (default: 1).
         ignore_self_loops: If True, exclude self-loop transitions from analysis.
         verbose: If True, print progress messages.
         debug: If True, print debug information.
@@ -130,8 +132,12 @@ def run_analysis_pipeline(
             (G, min_entropy, max_entropy, mean_entropy, entropy_values)
     """
     if verbose:
-        print(f"Loading data from {tsv_path} (column='{column_name}')...")
+        print(f"Loading data from {tsv_path} (column='{column_name}', step_size={step_size})...")
     word_sequence = load_data_from_tsv(tsv_path, column_name=column_name)
+    
+    # Apply sub-sampling
+    if step_size > 1:
+        word_sequence = word_sequence[::step_size]
     
     if verbose:
         print(f"Building digraph with {len(word_sequence)} states...")
