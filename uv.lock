@@ -79,7 +79,7 @@ wheels = [
 
 [[package]]
 name = "digraph-inout-analysis"
-version = "0.1.6"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },

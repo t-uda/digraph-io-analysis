@@ -148,7 +148,8 @@ def run_analysis_pipeline(
     include_raw_entropy_values: bool = False,
     min_duration: int = 1,
     output_graph_plot_path: Optional[str] = None,
-    output_bar_chart_path: Optional[str] = None
+    output_bar_chart_path: Optional[str] = None,
+    show_plots: bool = False
 ) -> Union[Tuple[nx.DiGraph, float, float, float], Tuple[nx.DiGraph, float, float, float, List[float]]]:
     """
     Complete pipeline from TSV/CSV to GEXF with entropy analysis.
@@ -165,6 +166,7 @@ def run_analysis_pipeline(
         min_duration: Minimum number of consecutive steps a state must persist to be kept (default: 1).
         output_graph_plot_path: Optional path to save a static plot of the graph.
         output_bar_chart_path: Optional path to save a bar chart of node entropies.
+        show_plots: If True, display the plots using plt.show().
     
     Returns:
         If include_raw_entropy_values is False:
@@ -240,16 +242,16 @@ def run_analysis_pipeline(
         print(f"Exporting to {output_gexf_path}...")
     export_to_gephi(G, output_gexf_path)
     
-    # Generate static plots if requested
-    if output_graph_plot_path:
-        if verbose:
+    # Generate static plots if requested or show_plots is True
+    if output_graph_plot_path or show_plots:
+        if verbose and output_graph_plot_path:
             print(f"Generating graph plot to {output_graph_plot_path}...")
-        plot_graph_with_entropy(G, output_graph_plot_path)
+        plot_graph_with_entropy(G, output_path=output_graph_plot_path, show=show_plots)
         
-    if output_bar_chart_path:
-        if verbose:
+    if output_bar_chart_path or show_plots:
+        if verbose and output_bar_chart_path:
             print(f"Generating bar chart to {output_bar_chart_path}...")
-        plot_node_entropy_bars(G, output_bar_chart_path)
+        plot_node_entropy_bars(G, output_path=output_bar_chart_path, show=show_plots)
     
     if include_raw_entropy_values:
         return G, min_entropy, max_entropy, mean_entropy, entropy_values

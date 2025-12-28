@@ -27,7 +27,8 @@ def main():
         verbose=True,
         debug=True,
         output_graph_plot_path='transition_graph.png',
-        output_bar_chart_path='node_entropy_bars.png'
+        output_bar_chart_path='node_entropy_bars.png',
+        show_plots=False # Set to True in notebooks to display plots inline
     )
     
     print("\nAnalysis Summary:")

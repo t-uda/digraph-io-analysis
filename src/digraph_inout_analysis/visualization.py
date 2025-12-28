@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import numpy as np
-from typing import Optional
+from typing import Optional, List
 
 def assign_node_colors(G: nx.DiGraph, colormap_name: str = 'viridis') -> nx.DiGraph:
     """
@@ -44,7 +44,7 @@ def assign_node_colors(G: nx.DiGraph, colormap_name: str = 'viridis') -> nx.DiGr
         
     return G
 
-def plot_graph_with_entropy(G: nx.DiGraph, output_path: str, colormap_name: str = 'viridis'):
+def plot_graph_with_entropy(G: nx.DiGraph, output_path: Optional[str] = None, colormap_name: str = 'viridis', show: bool = False):
     """
     Draw the graph using NetworkX and Matplotlib, coloring nodes by in_entropy_sum.
     """
@@ -77,11 +77,16 @@ def plot_graph_with_entropy(G: nx.DiGraph, output_path: str, colormap_name: str 
     plt.axis('off')
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-    print(f"Graph plot saved to {output_path}")
+    if output_path:
+        plt.savefig(output_path, dpi=300)
+        print(f"Graph plot saved to {output_path}")
+    
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
-def plot_node_entropy_bars(G: nx.DiGraph, output_path: str):
+def plot_node_entropy_bars(G: nx.DiGraph, output_path: Optional[str] = None, show: bool = False):
     """
     Create a bar chart of Node vs In-Entropy Sum.
     Nodes are sorted by entropy in descending order.
@@ -115,6 +120,11 @@ def plot_node_entropy_bars(G: nx.DiGraph, output_path: str):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-    print(f"Bar chart saved to {output_path}")
+    if output_path:
+        plt.savefig(output_path, dpi=300)
+        print(f"Bar chart saved to {output_path}")
+        
+    if show:
+        plt.show()
+    else:
+        plt.close()
