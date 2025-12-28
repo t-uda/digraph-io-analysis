@@ -39,37 +39,36 @@ def build_transition_digraph(word_sequence: List[str], ignore_self_loops: bool =
     
     Args:
         word_sequence: List of state words representing the trajectory.
-        ignore_self_loops: If True, exclude self-loop transitions (A->A) from the graph.
+        ignore_self_loops: If True, exclude self-loop transitions (A->A) from the graph and its history.
     
     Returns:
         NetworkX DiGraph with transition counts and next-state distributions.
     """
+    # If ignoring self-loops, we operate on a collapsed sequence where A->A->B->B->C becomes A->B->C
+    if ignore_self_loops:
+        effective_sequence = [k for k, g in groupby(word_sequence)]
+    else:
+        effective_sequence = word_sequence
+
     G = nx.DiGraph()
-    if len(word_sequence) < 2:
+    if len(effective_sequence) < 2:
         return G
 
     # Build edges and weights
-    for i in range(len(word_sequence) - 1):
-        u, v = word_sequence[i], word_sequence[i+1]
+    for i in range(len(effective_sequence) - 1):
+        u, v = effective_sequence[i], effective_sequence[i+1]
         
-        # Skip self-loops if requested
-        if ignore_self_loops and u == v:
-            continue
-            
+        # u != v is already guaranteed if ignore_self_loops is True
         if G.has_edge(u, v):
             G[u][v]['weight'] += 1
         else:
             G.add_edge(u, v, weight=1, next_counts={})
 
-    # Track transitions to the next state
-    for i in range(len(word_sequence) - 2):
-        u, v, w = word_sequence[i], word_sequence[i+1], word_sequence[i+2]
+    # Track transitions to the next state for conditional entropy calculation
+    # We look at triples (u, v, w) to calculate H(w | v, u)
+    for i in range(len(effective_sequence) - 2):
+        u, v, w = effective_sequence[i], effective_sequence[i+1], effective_sequence[i+2]
         
-        # Skip if the current transition is a self-loop (when ignore_self_loops is True)
-        if ignore_self_loops and u == v:
-            continue
-            
-        # Only track next state if the edge exists (it might have been skipped)
         if G.has_edge(u, v):
             G[u][v]['next_counts'][w] = G[u][v]['next_counts'].get(w, 0) + 1
             
