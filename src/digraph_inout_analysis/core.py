@@ -2,8 +2,9 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from scipy.stats import entropy
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 from itertools import groupby
+from .visualization import assign_node_colors, plot_graph_with_entropy, plot_node_entropy_bars
 
 def load_data_from_tsv(file_path: str, column_name: str = 'sub_cot') -> List[str]:
     """
@@ -145,7 +146,9 @@ def run_analysis_pipeline(
     verbose: bool = True,
     debug: bool = False,
     include_raw_entropy_values: bool = False,
-    min_duration: int = 1
+    min_duration: int = 1,
+    output_graph_plot_path: Optional[str] = None,
+    output_bar_chart_path: Optional[str] = None
 ) -> Union[Tuple[nx.DiGraph, float, float, float], Tuple[nx.DiGraph, float, float, float, List[float]]]:
     """
     Complete pipeline from TSV/CSV to GEXF with entropy analysis.
@@ -160,6 +163,8 @@ def run_analysis_pipeline(
         debug: If True, print debug information.
         include_raw_entropy_values: If True, include list of all edge entropy values in return.
         min_duration: Minimum number of consecutive steps a state must persist to be kept (default: 1).
+        output_graph_plot_path: Optional path to save a static plot of the graph.
+        output_bar_chart_path: Optional path to save a bar chart of node entropies.
     
     Returns:
         If include_raw_entropy_values is False:
@@ -228,9 +233,23 @@ def run_analysis_pipeline(
         G.nodes[node]['in_degree'] = G.in_degree(node, weight='weight')
         G.nodes[node]['out_degree'] = G.out_degree(node, weight='weight')
     
+    # Assign colors based on entropy for Gephi
+    G = assign_node_colors(G)
+    
     if verbose:
         print(f"Exporting to {output_gexf_path}...")
     export_to_gephi(G, output_gexf_path)
+    
+    # Generate static plots if requested
+    if output_graph_plot_path:
+        if verbose:
+            print(f"Generating graph plot to {output_graph_plot_path}...")
+        plot_graph_with_entropy(G, output_graph_plot_path)
+        
+    if output_bar_chart_path:
+        if verbose:
+            print(f"Generating bar chart to {output_bar_chart_path}...")
+        plot_node_entropy_bars(G, output_bar_chart_path)
     
     if include_raw_entropy_values:
         return G, min_entropy, max_entropy, mean_entropy, entropy_values

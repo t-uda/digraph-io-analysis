@@ -9,5 +9,6 @@ venv/
 build/
 dist/
 *.gexf
+*.png
 .python-version
 uv.lock

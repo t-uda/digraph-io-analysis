@@ -25,7 +25,9 @@ def main():
         tsv_path, 
         output_gexf,
         verbose=True,
-        debug=True
+        debug=True,
+        output_graph_plot_path='transition_graph.png',
+        output_bar_chart_path='node_entropy_bars.png'
     )
     
     print("\nAnalysis Summary:")
