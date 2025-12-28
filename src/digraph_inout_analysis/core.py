@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 from scipy.stats import entropy
 from typing import Union, List, Tuple
+from itertools import groupby
 
 def load_data_from_tsv(file_path: str, column_name: str = 'sub_cot') -> List[str]:
     """
@@ -110,7 +111,8 @@ def run_analysis_pipeline(
     ignore_self_loops: bool = False,
     verbose: bool = True,
     debug: bool = False,
-    include_raw_entropy_values: bool = False
+    include_raw_entropy_values: bool = False,
+    min_duration: int = 1
 ) -> Union[Tuple[nx.DiGraph, float, float, float], Tuple[nx.DiGraph, float, float, float, List[float]]]:
     """
     Complete pipeline from TSV/CSV to GEXF with entropy analysis.
@@ -124,6 +126,7 @@ def run_analysis_pipeline(
         verbose: If True, print progress messages.
         debug: If True, print debug information.
         include_raw_entropy_values: If True, include list of all edge entropy values in return.
+        min_duration: Minimum number of consecutive steps a state must persist to be kept (default: 1).
     
     Returns:
         If include_raw_entropy_values is False:
@@ -138,6 +141,20 @@ def run_analysis_pipeline(
     # Apply sub-sampling
     if step_size > 1:
         word_sequence = word_sequence[::step_size]
+    
+    # Filter by duration (contract short-lived states)
+    if min_duration > 1:
+        if verbose:
+            print(f"Filtering states with duration < {min_duration}...")
+        original_len = len(word_sequence)
+        filtered_sequence = []
+        for state, group in groupby(word_sequence):
+            chunk = list(group)
+            if len(chunk) >= min_duration:
+                filtered_sequence.extend(chunk)
+        word_sequence = filtered_sequence
+        if verbose:
+            print(f"Sequence length reduced from {original_len} to {len(word_sequence)}")
     
     if verbose:
         print(f"Building digraph with {len(word_sequence)} states...")

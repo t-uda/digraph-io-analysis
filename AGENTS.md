@@ -53,3 +53,10 @@ from digraph_inout_analysis.core import build_transition_graph, calculate_entrop
 
 計算された entropy を属性として持つ digraph を Gephi 形式で出力してください．
 
+## 短寿命状態のフィルタリング (min_duration)
+
+数学的に不安定な状態や，解像度の限界で一瞬だけ現れる状態（流線パターン表現）を無視するために，`min_duration` パラメータを導入しています．
+
+- $n$ ステップ以上持続した COT 表現パターンのみを採用します．
+- 例えば $n=2$ の場合，軌道 `A -> A -> B -> C -> C -> C` は，1ステップしか持続していない `B` が取り除かれ，`A -> A -> C -> C -> C` と縮約されます．
+- これにより，構造的に安定した遷移のみを抽出したグラフ解析が可能になります．
