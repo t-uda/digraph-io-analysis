@@ -103,6 +103,28 @@ def export_to_gephi(G, output_path):
     nx.write_gexf(G_export, output_path)
     print(f"Graph exported to {output_path}")
 
+def filter_sequence_by_duration(sequence: List[str], min_duration: int) -> List[str]:
+    """
+    Filter out states that persist for fewer than min_duration steps.
+    
+    Args:
+        sequence: List of states.
+        min_duration: Minimum number of consecutive steps a state must persist to be kept.
+        
+    Returns:
+        Filtered list of states.
+    """
+    if min_duration <= 1:
+        return sequence
+    
+    filtered_sequence = []
+    for state, group in groupby(sequence):
+        chunk = list(group)
+        if len(chunk) >= min_duration:
+            filtered_sequence.extend(chunk)
+            
+    return filtered_sequence
+
 def run_analysis_pipeline(
     tsv_path: str,
     output_gexf_path: str,
@@ -147,12 +169,7 @@ def run_analysis_pipeline(
         if verbose:
             print(f"Filtering states with duration < {min_duration}...")
         original_len = len(word_sequence)
-        filtered_sequence = []
-        for state, group in groupby(word_sequence):
-            chunk = list(group)
-            if len(chunk) >= min_duration:
-                filtered_sequence.extend(chunk)
-        word_sequence = filtered_sequence
+        word_sequence = filter_sequence_by_duration(word_sequence, min_duration)
         if verbose:
             print(f"Sequence length reduced from {original_len} to {len(word_sequence)}")
     
