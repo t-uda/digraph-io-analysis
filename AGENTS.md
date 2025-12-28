@@ -10,6 +10,14 @@
 
 サブタスクを完了する毎にバージョン管理（コミット）することを忘れないでください．
 
+### バージョン更新手順 (Version Bump)
+
+`pyproject.toml` のバージョンを更新（バンプ）する際は，必ず以下の手順に従い `uv.lock` も同期させてください．
+
+1.  `pyproject.toml` の `version` を書き換える．
+2.  `uv lock` を実行して `uv.lock` を更新する．
+3.  `pyproject.toml` と `uv.lock` を**同時に**コミットする．
+
 ## Python 環境 -- uv
 
 軽量な uv プロジェクトとして準備しました．`networkx`, `pandas`, `scipy` を依存関係として定義しています．
