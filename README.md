@@ -20,24 +20,23 @@ uv sync
 
 ## Running the Analysis
 
-To run a test analysis on the provided TSV data in the `tsv/` directory:
+To run a demo analysis on the provided TSV data in the `tsv/` directory:
 
 ```bash
-uv run examples/test_analysis.py
+uv run examples/demo_analysis.py
 ```
 
-This will:
-1. Load data from the TSV file (skipping "error" entries).
-2. Build a directed graph of state transitions.
-3. Calculate Shannon entropy for each transition.
-4. Export the resulting graph to `transition_digraph.gexf`.
+## Running Tests
 
-## Visualization
+To verify the logic and integration:
 
-The output file `transition_digraph.gexf` can be opened in [Gephi](https://gephi.org/) for interactive visualization and further analysis.
+```bash
+uv run python -m unittest discover tests
+```
 
 ## Project Structure
 
 - `src/digraph_inout_analysis/`: Core module containing the analysis logic.
 - `tsv/`: Directory for input data files.
 - `examples/`: Example scripts demonstrating usage.
+- `tests/`: Unit tests for core logic and integration.

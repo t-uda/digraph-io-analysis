@@ -14,6 +14,12 @@
 
 軽量な uv プロジェクトとして準備しました．`networkx`, `pandas`, `scipy` を依存関係として定義しています．
 
+テストの実行は以下のコマンドで行います：
+
+```bash
+uv run python -m unittest discover tests
+```
+
 ## Colab Notebook への export plan
 
 現在用意してある `tsv/` 以下のデータは，ほんの一部です．最終的には全てのデータを Colab ノートブック上で解析する予定です．全データは Google Drive に配置してあります．
