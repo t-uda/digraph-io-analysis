@@ -89,6 +89,18 @@ def calculate_io_entropy(G):
         
     return G
 
+def calculate_node_in_entropy(G: nx.DiGraph) -> nx.DiGraph:
+    """
+    Calculate the sum of entropies of all incoming edges for each node.
+    Assigns 'in_entropy_sum' attribute to each node.
+    """
+    for node in G.nodes():
+        in_entropy_sum = 0.0
+        for u, _, data in G.in_edges(node, data=True):
+            in_entropy_sum += data.get('entropy', 0.0)
+        G.nodes[node]['in_entropy_sum'] = in_entropy_sum
+    return G
+
 def export_to_gephi(G, output_path):
     """
     Export the graph to GEXF format which is compatible with Gephi.
@@ -191,6 +203,7 @@ def run_analysis_pipeline(
     if verbose:
         print("Calculating I/O entropy...")
     G = calculate_io_entropy(G)
+    G = calculate_node_in_entropy(G)
     
     # Extract entropy values and calculate statistics
     entropy_values = [data['entropy'] for u, v, data in G.edges(data=True)]

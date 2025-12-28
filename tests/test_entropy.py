@@ -1,7 +1,28 @@
 import unittest
-from digraph_inout_analysis.core import build_transition_digraph, calculate_io_entropy
+import networkx as nx
+from digraph_inout_analysis.core import build_transition_digraph, calculate_io_entropy, calculate_node_in_entropy
 
 class TestEntropy(unittest.TestCase):
+    def test_node_in_entropy_sum(self):
+        """Test if node in-entropy sum is calculated correctly."""
+        G = nx.DiGraph()
+        # A -> B (entropy 1.0)
+        # C -> B (entropy 0.5)
+        # D -> A (entropy 0.2)
+        G.add_edge('A', 'B', entropy=1.0)
+        G.add_edge('C', 'B', entropy=0.5)
+        G.add_edge('D', 'A', entropy=0.2)
+        # E has no incoming edges
+        G.add_node('E')
+        
+        G = calculate_node_in_entropy(G)
+        
+        self.assertAlmostEqual(G.nodes['B']['in_entropy_sum'], 1.5)
+        self.assertAlmostEqual(G.nodes['A']['in_entropy_sum'], 0.2)
+        self.assertAlmostEqual(G.nodes['C']['in_entropy_sum'], 0.0)
+        self.assertAlmostEqual(G.nodes['D']['in_entropy_sum'], 0.0)
+        self.assertAlmostEqual(G.nodes['E']['in_entropy_sum'], 0.0)
+
     def test_conditional_entropy(self):
         # Sequence: A, B, C, X, B, D, A, B, C, X, B, D ...
         # Pattern 1: A -> B -> C
